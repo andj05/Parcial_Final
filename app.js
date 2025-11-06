@@ -9,7 +9,7 @@ app.use(express.static('public'));
 // Array de mensajes divertidos
 const mensajesDivertidos = [
   '¡Hola Mundo! 🌍 ¡Bienvenido a mi aplicación DevOps!',
-  '¡Ey! ¡Qué onda, Mundo! 👋',
+  '¡Ey! ¡Qué onda, Mundo muchas gracias! 👋',
   '¡HOLAAAA MUNDOOO! 🎉',
   '¿Qué onda, Tierra? 🌎',
   '¡Hola desde Docker! 🐳',
