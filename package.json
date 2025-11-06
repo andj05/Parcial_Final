@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "test": "jest --passWithNoTests",
+    "test": "jest --forceExit --detectOpenHandles --testTimeout=10000",
     "dev": "nodemon app.js"
   },
   "keywords": ["devops", "cicd", "docker"],
