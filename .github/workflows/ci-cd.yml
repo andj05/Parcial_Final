@@ -1,0 +1,120 @@
+name: 🚀 DevOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/hola-mundo-devops
+
+jobs:
+  # Job 1: Instalar dependencias y ejecutar pruebas
+  test:
+    runs-on: ubuntu-latest
+    name: 📦 Install & Test
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v3
+
+      - name: 📦 Usar Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: 📚 Instalar dependencias
+        run: npm ci
+        
+      - name: 🧪 Ejecutar pruebas unitarias
+        run: npm test
+
+      - name: 📊 Generar reporte de cobertura
+        run: npm test -- --coverage || true
+
+  # Job 2: Construir y subir imagen Docker
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    name: 🐳 Build & Push Docker
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v3
+
+      - name: 🔧 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: 🔐 Login a Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 🏗️ Build y Push imagen
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 📢 Resumen del build
+        run: |
+          echo "✅ Imagen construida y subida exitosamente"
+          echo "📦 Imagen: ${{ env.IMAGE_NAME }}:latest"
+          echo "🔗 Link: https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/hola-mundo-devops"
+
+  # Job 3: Desplegar en producción (Render)
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    name: 🚀 Deploy a Render
+    
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v3
+
+      - name: 🔔 Trigger Render Deploy
+        run: |
+          curl --request POST \
+            --url "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            --header "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            --header "Content-Type: application/json"
+
+      - name: ⏳ Esperar a que Render procese
+        run: sleep 30
+
+      - name: ✅ Deploy completado
+        run: |
+          echo "✅ Deploy enviado a Render"
+          echo "🌐 Tu aplicación se actualizará en breves momentos"
+          echo "📋 Verifica el estado en: https://dashboard.render.com"
+
+  # Job 4: Notificación de resultado
+  notify:
+    needs: [test, build-and-push, deploy]
+    runs-on: ubuntu-latest
+    name: 📬 Notificaciones
+    if: always()
+    
+    steps:
+      - name: 📊 Resumen de Pipeline
+        run: |
+          echo "╔════════════════════════════════════╗"
+          echo "║   🚀 PIPELINE CI/CD COMPLETADO    ║"
+          echo "╚════════════════════════════════════╝"
+          echo ""
+          echo "✅ Tests:        ${{ needs.test.result }}"
+          echo "✅ Build/Push:   ${{ needs.build-and-push.result }}"
+          echo "✅ Deploy:       ${{ needs.deploy.result }}"
+          echo ""
+          echo "Commit: ${{ github.sha }}"
+          echo "Rama:   ${{ github.ref }}"
+          echo "Actor:  ${{ github.actor }}"
