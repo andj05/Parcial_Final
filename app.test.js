@@ -68,7 +68,6 @@ describe('Hola Mundo DevOps API', () => {
         respuestas.push(response.body.mensaje);
       }
       
-      // Verifica que al menos hay variedad en los mensajes
       const mensajesUnicos = new Set(respuestas);
       expect(mensajesUnicos.size).toBeGreaterThanOrEqual(1);
     });
@@ -103,4 +102,9 @@ describe('Hola Mundo DevOps API', () => {
     });
   });
 
+});
+
+afterAll((done) => {
+  jest.clearAllTimers();
+  done();
 });
